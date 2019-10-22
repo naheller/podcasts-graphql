@@ -3,27 +3,32 @@ const graphqlHttp = require('express-graphql')
 const { buildSchema } = require('graphql')
 const axios = require('axios')
 
+const baseUrl = 'https://listen-api.listennotes.com/api/v2'
+
 const schema = buildSchema(`
   type Query {
-    feedUrl(podcastName: String!): String
+    audioUrl(podcastName: String!): String
   }
 `)
 
-const getPodcastFeedUrl = ({ podcastName }) => {
-  const formattedName = podcastName.trim().replace(/ /g, '+')
+const getPodcastAudioUrl = ({ podcastName }) => {
+  const formattedName = podcastName.trim()
 
   return axios
-    .get('https://itunes.apple.com/search', {
+    .get(`${baseUrl}/search`, {
+      headers: {
+        'X-ListenAPI-Key': process.env.LISTEN_API_KEY
+      },
       params: {
-        term: formattedName,
-        entity: 'podcast'
+        q: formattedName
       }
     })
-    .then(res => res.data.results[0].feedUrl)
+    .then(res => res.data.results[0].audio)
+    .catch(err => console.log(err))
 }
 
 const root = {
-  feedUrl: getPodcastFeedUrl
+  audioUrl: getPodcastAudioUrl
 }
 
 const app = express()
